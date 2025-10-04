@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/registration/register.css">
+    <title>Create Account</title>
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <section class="login_section">
+        <form method="post">
+            <h1>Register</h1>
+
+            <input type="text" name="username" placeholder="Username" required>
+
+            <input type="email" name="email" placeholder="Email" required>
+
+            <input type="text" name="first_name" placeholder="First Name" required>
+
+            <input type="text" name="last_name" placeholder="Last Name" required>
+
+            <input type="password" name="password" placeholder="Password" required>
+
+            <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+
+            <button type="submit" class="login-btn">Register</button>
+
+            <p class="create-account">
+                Already have an account? 
+                <a href="/registration/login.html">Login</a>
+            </p>
+        </form>
+    </section>
+    <script>
+        async function loadNavbar() {
+            try {
+                const response = await fetch('/templates/navbar.html');
+                if (!response.ok) throw new Error("Failed to load navbar");
+
+                const html = await response.text();
+                document.getElementById('navbar-container').innerHTML = html;
+
+                const loginSignupContainer = document.querySelector(".login_signup_links");
+                if (!loginSignupContainer) return;
+
+                // Check tokens (support both camelCase + snake_case just in case)
+                const token = localStorage.getItem("accessToken") || localStorage.getItem("access_token");
+
+                if (token) {
+                    loginSignupContainer.innerHTML = `
+                        <a href="#" class="nav-link" id="logout-link">Logout</a>
+                    `;
+                    document.getElementById("logout-link").addEventListener("click", (e) => {
+                        e.preventDefault();
+                        localStorage.removeItem("accessToken");
+                        localStorage.removeItem("refreshToken");
+                        localStorage.removeItem("access_token");
+                        localStorage.removeItem("refresh_token");
+                        window.location.href = "/templates/stt.html";
+                    });
+                }
+            } catch (error) {
+                console.error("Error loading navbar:", error);
+            }
+        }
+        loadNavbar();
+        document.getElementById("registerForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const data = {
+                username: document.getElementById("username").value,
+                email: document.getElementById("email").value,
+                first_name: document.getElementById("first_name").value,
+                last_name: document.getElementById("last_name").value,
+                password: document.getElementById("password").value,
+                confirm_password: document.getElementById("confirm_password").value,
+            };
+
+            try {
+                const response = await fetch("http://127.0.0.1:8000/users/register/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(data),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                document.getElementById("registerForm").reset();
+                
+                window.location.href = "/registration/login.html"
+
+                } else {
+                    alert(result.detail || "Username or password incorrect!");
+                }
+            } catch (error) {
+                alert("Server error: " + error);
+            }
+        });
+ 
+    </script>
+</body>
+</html>

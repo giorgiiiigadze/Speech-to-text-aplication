@@ -14,26 +14,20 @@ class AudioUploadView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        # Save the audio instance first with status 'processing'
         audio_instance = serializer.save(user=self.request.user, status='processing')
 
-        # ⚡ Make sure Whisper can find ffmpeg on Windows
-        os.environ["PATH"] += os.pathsep + r"C:\ffmpeg\bin"  # <- Change this to your FFmpeg bin path
+        os.environ["PATH"] += os.pathsep + r"C:\ffmpeg\bin"
 
         try:
-            # Load Whisper model (choose base, small, medium, or large)
             model = whisper.load_model("base")
 
-            # Transcribe the uploaded audio
             result = model.transcribe(audio_instance.file.path)
 
-            # Save the transcript and update status
             audio_instance.transcribed_text = result["text"]
             audio_instance.status = 'done'
             audio_instance.save()
 
         except Exception as e:
-            # If something goes wrong, mark as pending/error
             audio_instance.status = 'pending'
             audio_instance.save()
             print("Error transcribing audio:", e)
