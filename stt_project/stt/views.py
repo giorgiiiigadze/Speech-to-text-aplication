@@ -14,23 +14,30 @@ class AudioUploadView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        audio_instance = serializer.save(user=self.request.user, status='processing')
+        serializer.save(user=self.request.user, status='uploaded')
 
-        os.environ["PATH"] += os.pathsep + r"C:\ffmpeg\bin"
+# class AudioUploadView(generics.CreateAPIView):
+#     serializer_class = AudioFileSerializer
+#     permission_classes = [IsAuthenticated]
 
-        try:
-            model = whisper.load_model("base")
+#     def perform_create(self, serializer):
+#         audio_instance = serializer.save(user=self.request.user, status='processing')
 
-            result = model.transcribe(audio_instance.file.path)
+#         os.environ["PATH"] += os.pathsep + r"C:\ffmpeg\bin"
 
-            audio_instance.transcribed_text = result["text"]
-            audio_instance.status = 'done'
-            audio_instance.save()
+#         try:
+#             model = whisper.load_model("base")
 
-        except Exception as e:
-            audio_instance.status = 'pending'
-            audio_instance.save()
-            print("Error transcribing audio:", e)
+#             result = model.transcribe(audio_instance.file.path)
+
+#             audio_instance.transcribed_text = result["text"]
+#             audio_instance.status = 'done'
+#             audio_instance.save()
+
+#         except Exception as e:
+#             audio_instance.status = 'pending'
+#             audio_instance.save()
+#             print("Error transcribing audio:", e)
             
 class AudioDetailGenericView(generics.RetrieveAPIView):
     queryset = AudioFile.objects.all()
@@ -48,13 +55,3 @@ class MyUploadedAudio(generics.ListAPIView):
     def get_queryset(self):
         qs = super().get_queryset()
         return qs.filter(user = self.request.user)
-
-
-class AudioStatusView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, pk):
-        audio = get_object_or_404(AudioFile, pk=pk, user=request.user)
-        serializer = AudioFileSerializer(audio)
-        return Response(serializer.data)
-    

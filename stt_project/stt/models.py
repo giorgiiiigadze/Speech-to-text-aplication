@@ -17,4 +17,3 @@ class AudioFile(models.Model):
         choices=[('pending', 'Pending'), ('processing', 'Processing'), ('done', 'Done')],
         default='pending'
     )
-    transcribed_text = models.TextField(blank=True)
