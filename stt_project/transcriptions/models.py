@@ -7,3 +7,5 @@ class Transcription(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     transcribed_text = models.TextField(blank=True)
+    transcripted = models.BooleanField(default=False)
+    transcription_tag = models.CharField(max_length=255, blank=True, null=True)  # <-- add title

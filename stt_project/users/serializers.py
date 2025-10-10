@@ -5,7 +5,10 @@ from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from tokenize import TokenError
 
+
 class RegisterSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
     password = serializers.CharField(
         write_only=True, required=True, validators=[validate_password]
     )
@@ -14,25 +17,26 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = [
-            "username", "email", "first_name", "last_name", "password", "confirm_password"
+            "username", "email", "first_name", "last_name",
+            "password", "confirm_password"
         ]
 
     def validate_email(self, value):
         if CustomUser.objects.filter(email=value).exists():
             raise serializers.ValidationError("Email is already registered.")
         if '@' not in value:
-            raise serializers.ValidationError("Please enter valid email.")
+            raise serializers.ValidationError("Please enter a valid email address.")
         return value
-    
+
     def validate(self, attrs):
         if attrs['password'] != attrs['confirm_password']:
             raise serializers.ValidationError({"password": "Passwords must match."})
         if len(attrs['password']) < 8:
-            raise serializers.ValidationError({"password": "Passwords must be more than 8 Characters"})
+            raise serializers.ValidationError({"password": "Password must be at least 8 characters long."})
         if CustomUser.objects.filter(username=attrs['username']).exists():
-            raise serializers.ValidationError("User with same username is already registered")
+            raise serializers.ValidationError("A user with that username already exists.")
         return attrs
-    
+
     def create(self, validated_data):
         validated_data.pop('confirm_password')
         user = CustomUser.objects.create_user(**validated_data)
