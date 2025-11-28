@@ -13,10 +13,8 @@ SECRET_KEY = 'django-insecure-h92)da6v*gept8$lt35b!u#_q0blu%52g1)cbf%a%x1j1zs0(#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
 
-
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ["192.168.1.32",'127.0.0.1', 'localhost']
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:5500'
@@ -44,6 +42,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+    'django_filters',
 
 ]
 
@@ -140,17 +139,43 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend'
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        # Anonymus user throttler
+        'rest_framework.throttling.AnonRateThrottle',
+        # Registered user throttler
+        'rest_framework.throttling.UserRateThrottle',
+
+        'stt.throttles.BurstRateThrottle',
+        'stt.throttles.SustainedRateThrottle',
+
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '30/min',
+        'user': '200/min',
+
+        # Change later to 100/200
+        'burst': '2000/min',
+        'sustained': '2000/hour',
+
+        'my_audios' : '50/min',
+        'audio_upload': '5/min'
+    }
+
 }
 
-
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=31),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
 }
+
+
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"

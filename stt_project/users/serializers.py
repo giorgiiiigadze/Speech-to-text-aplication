@@ -97,15 +97,14 @@ class CompleteUserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CompletedUserProfile
-        fields = [
-            "id",
-            "user",
-            "user_id",
-            "profile_image",
-            "profile_status",
-            "bio",
-            "location",
-            "birth_date",
-            "is_pro",
-        ]
+        fields = '__all__'
         read_only_fields = ["id", "user", "is_pro"]
+
+
+class ChatMessageSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username", read_only=True)
+
+    class Meta:
+        model = ChatMessage
+        fields = '__all__'
+        read_only_fields = ["id", "user", "username", "timestamp"]
