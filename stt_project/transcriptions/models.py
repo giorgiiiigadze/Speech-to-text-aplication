@@ -9,3 +9,6 @@ class Transcription(models.Model):
     transcribed_text = models.TextField(blank=True)
     transcripted = models.BooleanField(default=False)
     transcription_tag = models.CharField(max_length=255, blank=True, null=True)
+    
+    def __str__(self):
+        return f"Your transcripted text:{self.transcribed_text}"

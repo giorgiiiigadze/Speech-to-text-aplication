@@ -1,9 +1,11 @@
 from rest_framework import serializers
 from .models import *
 from django.contrib.auth.password_validation import validate_password
+from django.core.validators import validate_email
+
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-from tokenize import TokenError
+from rest_framework_simplejwt.exceptions import TokenError
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -22,20 +24,16 @@ class RegisterSerializer(serializers.ModelSerializer):
         ]
 
     def validate_email(self, value):
+        validate_email(value)
         if CustomUser.objects.filter(email=value).exists():
             raise serializers.ValidationError("Email is already registered.")
-        if '@' not in value:
-            raise serializers.ValidationError("Please enter a valid email address.")
         return value
-
+    
     def validate(self, attrs):
         if attrs['password'] != attrs['confirm_password']:
             raise serializers.ValidationError({"password": "Passwords must match."})
-        if len(attrs['password']) < 8:
-            raise serializers.ValidationError({"password": "Password must be at least 8 characters long."})
-        if CustomUser.objects.filter(username=attrs['username']).exists():
-            raise serializers.ValidationError("A user with that username already exists.")
         return attrs
+
 
     def create(self, validated_data):
         validated_data.pop('confirm_password')
@@ -86,7 +84,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = '__all__'
 
-
 class CompleteUserProfileSerializer(serializers.ModelSerializer):
     user = UserProfileSerializer(read_only=True)  
     user_id = serializers.PrimaryKeyRelatedField(
@@ -108,3 +105,7 @@ class ChatMessageSerializer(serializers.ModelSerializer):
         model = ChatMessage
         fields = '__all__'
         read_only_fields = ["id", "user", "username", "timestamp"]
+
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)

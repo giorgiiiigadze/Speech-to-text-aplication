@@ -10,7 +10,9 @@ from .serializers import TranscriptionSerializers
 import whisper
 import os
 # Transcription part
-from langchain.prompts import PromptTemplate, FewShotPromptTemplate
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnableSequence
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 
@@ -18,11 +20,7 @@ load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 
 def generate_tag(text):
-    example_prompt = PromptTemplate(
-        input_variables=["input", "output"],
-        template="Input: {input}\nOutput: {output}"
-    )
-
+    # Few-shot examples
     examples = [
         {"input": "Helloo kids, today we are learning about biology", "output": "Biology class"},
         {"input": "The capital city of America is Washington D.C", "output": "Geography class"},
@@ -30,20 +28,32 @@ def generate_tag(text):
         {"input": "Shakespeare wrote many famous plays", "output": "Literature class"}
     ]
 
-    few_shot_prompt = FewShotPromptTemplate(
-        examples=examples,
-        example_prompt=example_prompt,
-        prefix="Generate a 3-word title for the following text:\n",
-        suffix="Input: {sentence}\nOutput:",
-        input_variables=["sentence"]
+    # Create a prompt template for each example
+    example_prompt = PromptTemplate(
+        input_variables=["input", "output"],
+        template="Input: {input}\nOutput: {output}"
     )
 
-    llm = ChatOpenAI(openai_api_key=api_key)
+    # Combine examples into a single prefix string
+    few_shot_prefix = "Generate a 3-word title for the following text:\n"
+    few_shot_examples_text = "\n".join([f"Input: {ex['input']}\nOutput: {ex['output']}" for ex in examples])
+    
+    # Final prompt template for the user input
+    user_prompt = PromptTemplate(
+        input_variables=["sentence"],
+        template=f"{few_shot_prefix}{few_shot_examples_text}\nInput: {{sentence}}\nOutput:"
+    )
 
-    llm_chain = few_shot_prompt | llm
+    # LLM
+    llm = ChatOpenAI(api_key=api_key, model="gpt-4o-mini", temperature=0)
 
-    response = llm_chain.invoke({"sentence": text})
-    return response.content
+    # Build a RunnableSequence
+    chain = RunnableSequence(user_prompt | llm)
+
+    response = chain.invoke({"sentence": text})
+    # response is a dict with key 'text' in new API
+    return response["text"] if isinstance(response, dict) else response
+
 
 
 class AudioTranscribeView(generics.GenericAPIView):

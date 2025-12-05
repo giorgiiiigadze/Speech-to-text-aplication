@@ -9,12 +9,12 @@ from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from transcriptions.serializers import *
 import os
+import json
 
-# Audio waveform generation part
 from pydub import AudioSegment
 import numpy as np
 
-def generate_waveform_data(audio_path, points=120):
+def generate_waveform_file(audio_path, points=120):
     try:
         sound = AudioSegment.from_file(audio_path)
         samples = np.array(sound.get_array_of_samples())
@@ -73,19 +73,21 @@ class MyUploadedAudio(generics.ListAPIView):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['file_title', 'status', 'transcripted', 'favorite']
 
-    def patch(self, request, pk=None):
-        audio_id = pk or request.data.get("id") or request.query_params.get("id")
-        if not audio_id:
-            return Response({"error": "Audio ID (id) is required."},
-                            status=status.HTTP_400_BAD_REQUEST)
+    
+    def get_queryset(self):
+        return AudioFile.objects.filter(user=self.request.user)
+    
+class AudioFavoriteToggleView(APIView):
+    permission_classes = [IsAuthenticated]
 
-        audio = get_object_or_404(AudioFile, id=audio_id, user=request.user)
-
+    def post(self, request, pk):
+        audio = get_object_or_404(AudioFile, pk=pk, user=request.user)
+        
         if "favorite" in request.data:
             audio.favorite = bool(request.data["favorite"])
         else:
             audio.favorite = not audio.favorite
-
+        
         audio.save()
 
         return Response({
@@ -94,10 +96,7 @@ class MyUploadedAudio(generics.ListAPIView):
             "favorite": audio.favorite,
             "message": f"Audio {'added to' if audio.favorite else 'removed from'} favorites."
         }, status=status.HTTP_200_OK)
-    
-    def get_queryset(self):
-        return AudioFile.objects.filter(user=self.request.user)
-    
+
 class AudioCommentListCreateView(generics.ListCreateAPIView):
     serializer_class = AudioCommentSerializer
     permission_classes = [IsAuthenticated]
@@ -121,29 +120,43 @@ class AudioWaveformView(APIView):
         if not audio.file or not os.path.isfile(audio.file.path):
             return Response({"error": "Audio file not found."}, status=404)
 
-        if audio.status == 'done' and audio.waveform_data:
-            return Response({
-                "status": "done",
-                "waveform": audio.waveform_data
-            }, status=200)
+        if audio.status == 'done' and audio.waveform_file:
+            waveform_path = audio.waveform_file.path if hasattr(audio.waveform_file, 'path') else None
+            if waveform_path and os.path.isfile(waveform_path):
+                with open(waveform_path, "r") as f:
+                    waveform = json.load(f)
+                return Response({
+                    "status": "done",
+                    "waveform": waveform
+                }, status=200)
+            else:
+                audio.waveform_file = None
+                audio.status = 'pending'
+                audio.save()
 
-        elif audio.status in ['pending', 'processing']:
+        if audio.status in ['pending', 'processing']:
             if audio.status == 'pending':
                 audio.status = 'processing'
                 audio.save()
-
             return Response({
                 "status": audio.status,
                 "message": "Audio is being processed. Please check back later."
             }, status=202)
-        
-        else:
-            from .views import generate_waveform_data
-            waveform = generate_waveform_data(audio.file.path)
-            audio.waveform_data = waveform
-            audio.status = 'done'
-            audio.save()
-            return Response({
-                "status": "done",
-                "waveform": waveform
-            }, status=200)
+
+        waveform = generate_waveform_file(audio.file.path, points=120)
+
+        waveforms_dir = os.path.join(os.path.dirname(audio.file.path), "waveforms")
+        os.makedirs(waveforms_dir, exist_ok=True)
+        waveform_file_path = os.path.join(waveforms_dir, f"{audio.id}_waveform.json")
+
+        with open(waveform_file_path, "w") as f:
+            json.dump(waveform, f)
+
+        audio.waveform_file.name = f"audio/waveforms/{audio.id}_waveform.json"
+        audio.status = 'done'
+        audio.save()
+
+        return Response({
+            "status": "done",
+            "waveform": waveform
+        }, status=200)

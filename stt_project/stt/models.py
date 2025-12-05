@@ -18,7 +18,7 @@ class AudioFile(models.Model):
         choices=[('pending', 'Pending'), ('processing', 'Processing'), ('done', 'Done')],
         default='pending'
     )
-    waveform_data = models.JSONField(null=True, blank=True)
+    waveform_file = models.FileField(upload_to='waveforms/', null=True, blank=True)
     transcripted = models.BooleanField(default=False)
 
     favorite = models.BooleanField(default=False)

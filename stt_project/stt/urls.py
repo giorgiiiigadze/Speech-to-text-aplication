@@ -7,6 +7,8 @@ urlpatterns = [
     path('api/audio/upload/', AudioUploadView.as_view(), name='upload-audio'),
     path('api/audio/', MyUploadedAudio.as_view(), name='my_audios'),
     path('api/audio/<int:pk>/', AudioDetailGenericView.as_view(), name='audio-detail-generic'),
+    path('api/audio/favorite/<int:pk>/', AudioFavoriteToggleView.as_view(), name='audio-favorite-toggle'),
+
     path('api/audio/waveform/<int:pk>/', AudioWaveformView.as_view(), name='audio-waveform'),
     path('api/audio/comment/<int:audio_id>/', AudioCommentListCreateView.as_view(), name='audio-comments'),
 ]
