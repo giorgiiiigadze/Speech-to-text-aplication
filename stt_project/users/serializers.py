@@ -6,7 +6,9 @@ from django.core.validators import validate_email
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
+import requests
 
+MAILBOXLAYER_API_KEY = "3b5010f6be0ff8429c65ed93d8042e25"
 
 class RegisterSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=False, allow_blank=True)
@@ -25,8 +27,17 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def validate_email(self, value):
         validate_email(value)
+
         if CustomUser.objects.filter(email=value).exists():
             raise serializers.ValidationError("Email is already registered.")
+
+        response = requests.get(
+            f"http://apilayer.net/api/check?access_key={MAILBOXLAYER_API_KEY}&email={value}"
+        ).json()
+
+        if not response.get("format_valid") or not response.get("mx_found"):
+            raise serializers.ValidationError("This email address does not exist or domain is invalid.")
+
         return value
     
     def validate(self, attrs):
@@ -39,25 +50,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         validated_data.pop('confirm_password')
         user = CustomUser.objects.create_user(**validated_data)
         return user
-
-
-class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
-    password = serializers.CharField(write_only=True)
-
-    def validate(self, data):
-        username = data.get("username")
-        password = data.get("password")
-
-        user = authenticate(username=username, password=password)
-        if not user:
-            raise serializers.ValidationError("Invalid username or password.")
-
-        refresh = RefreshToken.for_user(user)
-        return {
-            "access": str(refresh.access_token),
-            "refresh": str(refresh),
-        }
 
 
 class LogoutSerializer(serializers.Serializer):

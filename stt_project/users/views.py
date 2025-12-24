@@ -55,21 +55,6 @@ class RegisterView(APIView):
             return Response({"message": "User registered successfully."}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class LoginView(APIView):
-    permission_classes = [AllowAny] 
-    serializer_class = LoginSerializer  
-
-    def get(self, request):
-        return Response({"message": "Send a POST request to login to your account."})
-    
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response({
-            "access": serializer.validated_data['access'],
-            "refresh": serializer.validated_data['refresh']
-        }, status=status.HTTP_200_OK)
-
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
