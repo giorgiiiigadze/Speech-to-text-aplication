@@ -89,15 +89,27 @@ class CompleteUserProfileSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ["id", "user", "is_pro"]
 
+class ChatRequestSerializer(serializers.Serializer):
+    message = serializers.CharField(
+        max_length=4000,
+        allow_blank=False,
+        trim_whitespace=True
+    )
 
-class ChatMessageSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source="user.username", read_only=True)
+    transcription_id = serializers.IntegerField(
+        required=False,
+        allow_null=True
+    )
 
-    class Meta:
-        model = ChatMessage
-        fields = '__all__'
-        read_only_fields = ["id", "user", "username", "timestamp"]
+    temperature = serializers.FloatField(
+        required=False,
+        min_value=0.0,
+        max_value=1.2
+    )
 
-    def create(self, validated_data):
-        validated_data['user'] = self.context['request'].user
-        return super().create(validated_data)
+    def validate_transcription_id(self, value):
+        if value is None:
+            return None
+        if not Transcription.objects.filter(id=value).exists():
+            raise serializers.ValidationError("Invalid transcription.")
+        return value

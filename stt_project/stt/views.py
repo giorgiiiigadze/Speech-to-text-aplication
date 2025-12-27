@@ -11,7 +11,6 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from .throttles import *
 
-# Caching
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 
@@ -139,7 +138,70 @@ class AudioCommentDeleteView(generics.DestroyAPIView):
 
     def get_queryset(self):
         return Comment.objects.filter(user=self.request.user)
-    
+
+class AudioCommentEditView(generics.UpdateAPIView):
+    serializer_class = CommentEditSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ["get", "patch"]
+
+    def get_queryset(self):
+        return Comment.objects.filter(user=self.request.user)
+
+    def patch(self, request, *args, **kwargs):
+        comment = self.get_object()
+
+        if "content" not in request.data or not request.data["content"].strip():
+            return Response(
+                {"error": "Comment content is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = self.get_serializer(
+            comment,
+            data={"content": request.data["content"]},
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({
+            "id": comment.id,
+            "content": comment.content,
+            "message": "Comment updated successfully."
+        }, status=status.HTTP_200_OK)
+
+class AudioCommentStatusUpdateView(generics.UpdateAPIView):
+    serializer_class = CommentStatusSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ["patch"]
+
+    def get_queryset(self):
+        return Comment.objects.filter(user=self.request.user)
+
+    def patch(self, request, *args, **kwargs):
+        comment = self.get_object()
+
+        new_status = request.data.get("status")
+        if not new_status:
+            return Response(
+                {"error": "status is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = self.get_serializer(
+            comment,
+            data={"status": new_status},
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({
+            "id": comment.id,
+            "status": comment.status,
+            "message": "Comment status updated successfully."
+        }, status=status.HTTP_200_OK)
+
 class AudioCommentTypeUpdateView(generics.UpdateAPIView):
     serializer_class = CommentTypeSerializer
     permission_classes = [IsAuthenticated]

@@ -118,6 +118,8 @@ USE_I18N = True
 
 USE_TZ = True
 
+DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  # 50 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  # 50 MB
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
@@ -141,7 +143,6 @@ CACHES = {
     }
 }
 
-
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
@@ -160,7 +161,8 @@ REST_FRAMEWORK = {
 
         "edit_audio_title": "5/min",
         "audio_comments": "10/min",
-        "audio_comment_delete": "10/min",
+        "audio_comment_delete": "20/min",
+        "chat" : "10/min"
     },
 }
 

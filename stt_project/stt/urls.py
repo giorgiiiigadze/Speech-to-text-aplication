@@ -13,8 +13,11 @@ urlpatterns = [
     path('api/audio/favorite/<int:pk>/', AudioFavoriteToggleView.as_view(), name='audio-favorite-toggle'),
 
     path('api/audio/comment/<int:audio_id>/', AudioCommentListCreateView.as_view(), name='audio-comments'),
+    path('api/audio/comment/edit_status/<int:pk>', AudioCommentStatusUpdateView.as_view(), name='audio-comment-status-change'),
+    path('api/audio/comment/edit/<int:pk>/', AudioCommentEditView.as_view(), name='audio-comment-edit'),
+    path('api/audio/comment/edit_type/<int:pk>/', AudioCommentTypeUpdateView.as_view(), name='audio-comment-type-change'),
+
     path('api/audio/comment/delete/<int:pk>/', AudioCommentDeleteView.as_view(), name='audio-comment-delete'),
-    path('api/audio/comment/edit_type/<int:pk>/', AudioCommentTypeUpdateView.as_view(), name='audio-comment-type-update'),
 
     path('api/audio/waveform/<int:pk>/', AudioWaveformView.as_view(), name='audio-waveform'),
 ]

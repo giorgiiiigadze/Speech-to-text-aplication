@@ -10,4 +10,4 @@ class TranscriptionSerializers(serializers.ModelSerializer):
     class Meta:
         model = Transcription
         fields = ['id', 'audio', 'user', 'transcribed_text', 'created_at', 'transcription_tag', 'transcripted']
-        read_only_fields = ['user', 'transcribed_text', 'created_at']
+        read_only_fields = ['audio', 'user', 'created_at', 'transcripted', 'transcription_tag', 'transcribed_text']

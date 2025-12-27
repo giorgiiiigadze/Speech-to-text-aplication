@@ -18,7 +18,7 @@ urlpatterns = [
 
     path('api/profile/', UserProfileAPIView.as_view(), name="my_profile"),
     path("api/completed_profile/", CompleteUserProfileAPIView.as_view(), name='completed_profile'),
-    path("api/chat_bot/", ChatbotAPIView.as_view(), name='chat_bot')
+    path("chat/", ChatAPIView.as_view(), name="chat"),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
